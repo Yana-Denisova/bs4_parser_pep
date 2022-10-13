@@ -120,8 +120,8 @@ def pep(session):
     result = [('Статус', 'Количество')]
     for tr_tag in tqdm(tr_tags):
         total_pep_sum += 1
-        table_pep_statuse = find_tag(tr_tag, 'td')
-        table_pep_statuse = table_pep_statuse.text[1:]
+        table_pep = find_tag(tr_tag, 'td')
+        table_pep = table_pep.text[1:]
         a_tag = find_tag(tr_tag, 'a',
                          attrs={'class': 'pep reference internal'})
         pep_url = urljoin(PEP_DOC_URL, a_tag['href'])
@@ -132,17 +132,18 @@ def pep(session):
         status = soup.find(string='Status')
         statuse_parent = status.find_parent()
         current_status = statuse_parent.find_next_sibling().text
-        if current_status not in EXPECTED_STATUS[table_pep_statuse]:
-            logging.info(
-                    f'Несовпадающие статусы: '
-                    f'{pep_url} '
-                    f'Cтатус в карточке: {current_status} '
-                    f'Ожидаемые статусы: {EXPECTED_STATUS[table_pep_statuse]} '
-                )
-        if current_status not in pep_types_sum.keys():
-            pep_types_sum.update({current_status: 1})
-        else:
-            pep_types_sum[current_status] += 1
+        try:
+            if current_status not in EXPECTED_STATUS[table_pep]:
+                logging.info(
+                        f'Несовпадающие статусы: '
+                        f'{pep_url} '
+                        f'Cтатус в карточке: {current_status} '
+                        f'Ожидаемые статусы: {EXPECTED_STATUS[table_pep]} '
+                    )
+        except KeyError:
+            logging.error('Такого статуса не существует')
+        pep_types_sum[current_status] = pep_types_sum.get(
+                                            current_status, 0) + 1
     pep_types_sum['Total'] = total_pep_sum
     result.extend(pep_types_sum.items())
     return result
